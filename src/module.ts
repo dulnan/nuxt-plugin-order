@@ -1,15 +1,20 @@
 import { defineNuxtModule } from '@nuxt/kit'
 import type { NuxtPlugin } from '@nuxt/schema'
 
-type NuxtPluginOrderItemName = { name: string }
 type NuxtPluginOrderItemPathMatch = { pathMatch: string }
-type NuxtPluginOrderItem =
-  | NuxtPluginOrderItemName
-  | NuxtPluginOrderItemPathMatch
+
+// Currently only pathMatch is supported.
+type NuxtPluginOrderItem = NuxtPluginOrderItemPathMatch
 
 export type ModuleOptions = {
   /**
-   * The pattern of source files to scan for translations.
+   * The desired order of plugins.
+   *
+   * The order defined here is used to determine the final weight.
+   * Plugins provided by Nuxt itself may be omitted. All other plugins (local
+   * or from node_modules) must be defined here.
+   *
+   * Any given plugin may only match with exactly one entry here.
    */
   order: NuxtPluginOrderItem[]
 
@@ -60,16 +65,7 @@ export default defineNuxtModule<ModuleOptions>({
     ): PluginWithWeight | { error: string } => {
       // Build matches.
       const matches = pluginOrderWithWeight.filter((order) => {
-        if ('name' in order && order.name === plugin.name) {
-          return true
-        } else if (
-          'pathMatch' in order &&
-          plugin.src.includes(order.pathMatch)
-        ) {
-          return true
-        }
-
-        return false
+        return plugin.src.includes(order.pathMatch)
       })
 
       if (matches.length === 0) {
@@ -79,12 +75,12 @@ export default defineNuxtModule<ModuleOptions>({
         }
         // No match found.
         return {
-          error: `[nuxt-plugin-order]: Failed to determine order for plugin "${plugin.src}" with name "${plugin.name}"`,
+          error: `[nuxt-plugin-order]: Failed to determine order for plugin "${plugin.src}".`,
         }
       } else if (matches.length > 1) {
         // More than one match found.
         return {
-          error: `[nuxt-plugin-order]: Plugin "${plugin.src}" with name "${plugin.name}" matched multiple defined orders: ${JSON.stringify(matches)}`,
+          error: `[nuxt-plugin-order]: Plugin "${plugin.src}" matched multiple defined orders: ${JSON.stringify(matches)}`,
         }
       }
 
@@ -124,7 +120,6 @@ export default defineNuxtModule<ModuleOptions>({
         const tableObjects = sorted.map((v) => {
           return {
             originalWeight: v.originalWeight,
-            name: v.plugin.name,
             src: v.plugin.src,
           }
         })
