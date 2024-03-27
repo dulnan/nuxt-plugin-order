@@ -1,6 +1,6 @@
 # nuxt-plugin-order
 
-A small build module for Nuxt 3 to enforce a specific order of plugins at buld
+A small build module for Nuxt 3 to enforce a specific order of plugins at build
 time.
 
 ## Setup
